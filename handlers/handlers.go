@@ -31,17 +31,7 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if rb.Slug != nil {
-		err := db.MakeShortLink(rb.URL, rb.Slug)
-		if err != nil {
-			// TODO: return 403 Forbidden (can't override existing URLs for now)
-			panic(err)
-		}
-		// TODO: return 200
-		return
-	}
-
-	err = db.MakeShortLink(rb.URL, nil)
+	err = h.DB.MakeShortLink(rb.URL, rb.Slug)
 	if err != nil {
 		// TODO: return 500
 		panic(err)
@@ -67,7 +57,7 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	createChan := make(chan int64)
 
 	go func(c chan int64) {
-		count, err := db.GetShortLinkVisitCount(rb.Slug, rb.StartTime, rb.EndTime)
+		count, err := h.DB.GetShortLinkVisitCount(rb.Slug, rb.StartTime, rb.EndTime)
 		if err != nil {
 			// TODO: return 500
 			panic(err)
@@ -76,7 +66,7 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	}(countChan)
 
 	go func(c chan map[string]int64) {
-		histogram, err := db.GetShortLinkVisitHistogram(rb.Slug, rb.StartTime, rb.EndTime)
+		histogram, err := h.DB.GetShortLinkVisitHistogram(rb.Slug, rb.StartTime, rb.EndTime)
 		if err != nil {
 			// TODO: return 500
 			panic(err)
@@ -85,7 +75,7 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	}(histChan)
 
 	go func(c chan int64) {
-		createdAt, err := db.GetShortLinkCreationDate(rb.Slug)
+		createdAt, err := h.DB.GetShortLinkCreationDate(rb.Slug)
 		if err != nil {
 			// TODO: return 500
 			panic(err)
@@ -113,13 +103,13 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		panic("400 - Bad Request")
 	}
 
-	shortLink, err := db.GetShortLink(slug)
+	shortLink, err := h.DB.GetShortLink(slug)
 	if err != nil {
 		// TODO: return 404 not found
 		panic(err)
 	}
 
-	go db.MakeShortLinkVisit(shortLink.Slug)
+	go h.DB.MakeShortLinkVisit(shortLink.Slug)
 
 	restOfURL := lib.GetURISuffix(r.URL.RequestURI())
 	http.Redirect(w, r, shortLink.URL + restOfURL, http.StatusSeeOther)

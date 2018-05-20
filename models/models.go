@@ -3,10 +3,10 @@ package models
 type UUID string
 
 type ShortLink struct {
-	UUID UUID
-	Slug string
-	URL string
-	CreatedAt int64
+	UUID int64 `db:"id"`
+	Slug string `db:"slug"`
+	URL string `db:"url"`
+	CreatedAt int64 `db:"created_at"`
 }
 
 type ShortLinkVisit struct {
@@ -17,7 +17,7 @@ type ShortLinkVisit struct {
 }
 
 type LinkReqBody struct {
-	URL string `json:"link"`
+	URL string `json:"url"`
 	Slug *string `json:"slug,omitempty"`
 }
 

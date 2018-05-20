@@ -1,10 +1,9 @@
 CREATE TABLE short_link (
-    id serial,
+    uuid serial,
     slug varchar(100),
     url varchar(500),
-    datestr varchar(25),
     created_at int,
-    PRIMARY KEY (id)
+    PRIMARY KEY (uuid)
 );
 
--- I should create an index on slug to improve lookup performance
+CREATE INDEX slug_index ON short_link (slug);
