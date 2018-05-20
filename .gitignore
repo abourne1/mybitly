@@ -1,1 +1,5 @@
+mybitly
 vendor
+
+.gitignore
+.gitignore.swp

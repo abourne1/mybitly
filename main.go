@@ -11,8 +11,8 @@ import (
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/link", handlers.LinkHandler)
+	r.HandleFunc("/link/", handlers.LinkHandler)
 	r.HandleFunc("/stats/", handlers.StatsHandler)
-	r.PathPrefix("/{url}").HandlerFunc(handlers.RedirectHandler)
+	r.PathPrefix("/{slug}").HandlerFunc(handlers.RedirectHandler)
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
