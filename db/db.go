@@ -2,9 +2,23 @@ package db
 
 import (
 	"time"
+	"database/sql"
+
+	_ "github.com/lib/pq"
 
 	"github/abourne1/mybitly/models"
 )
+
+type DB struct {
+	Connection *sql.DB
+}
+
+// close DB when main func terminates
+func New(connection *sql.DB) *DB {
+	return &DB{
+		Connection: connection,
+	}
+}
 
 func MakeShortLink(url string, slug *string) error {
 	// TODO: implement business logic with db calls when appropriate

@@ -11,7 +11,17 @@ import (
 	"github/abourne1/mybitly/models"
 )
 
-func LinkHandler(w http.ResponseWriter, r *http.Request) {
+type Handler struct {
+	DB *db.DB
+}
+
+func New(db *db.DB) *Handler {
+	return &Handler{
+		DB: db,
+	}
+}
+
+func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var err error
 	var rb models.LinkReqBody
@@ -41,7 +51,7 @@ func LinkHandler(w http.ResponseWriter, r *http.Request) {
 // TODO: Consider making this three separate endpoints
 // Instructions say "Provide a route for returning stats on a given short link"
 // I'm not sure if I have to make ONE route or if I can make many routes
-func StatsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var err error
 	var rb models.StatsReqBody
@@ -96,7 +106,7 @@ func StatsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func RedirectHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	slug, ok := mux.Vars(r)["slug"]
 	if !ok {
 		// TODO: return 400 bad request

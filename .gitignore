@@ -1,5 +1,7 @@
 mybitly
 vendor
 
+secrets.go
+
 .gitignore
 .gitignore.swp

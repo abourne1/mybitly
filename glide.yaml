@@ -2,3 +2,4 @@ package: github/abourne1/mybitly
 import:
 - package: github.com/gorilla/mux
   version: ^1.6.2
+- package: github.com/lib/pq
