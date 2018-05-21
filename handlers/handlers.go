@@ -42,7 +42,7 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 		// TODO: return 500
 		panic(err)
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp)
 }
@@ -112,7 +112,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		panic("400 - Bad Request")
 	}
 
-	shortLink, err := h.DB.GetShortLinkBySlug(slug)
+	shortLink, err := h.DB.GetShortLink(slug)
 	if err != nil {
 		// TODO: return 404 not found
 		panic(err)

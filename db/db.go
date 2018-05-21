@@ -16,6 +16,7 @@ const (
 	getByURLStmt = `SELECT * FROM short_link WHERE url=$1 LIMIT 1`
 	insertStmt = `INSERT INTO short_link (url, created_at) VALUES ($1, $2) RETURNING uuid`
 	insertCustomStmt = `INSERT INTO short_link (url, slug, created_at) VALUES ($1, $2, $3)`
+	insertVisitStmt = `INSERT INTO short_link_visit (slug, datestr, created_at) VALUES ($1, $2, $3)`
 	addSlugStmt = `UPDATE short_link SET slug=$1 WHERE uuid=$2`
 )
 
@@ -32,7 +33,7 @@ func New(connection *sql.DB) *DB {
 func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error) {
 	if slug != nil {
 		// If slug already exists, return it
-		shortLink, err := db.GetShortLinkBySlug(*slug)
+		shortLink, err := db.getShortLinkBySlug(*slug)
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +46,7 @@ func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error)
 	}
 
 	// If URL is already short linked, return it
-	shortLink, err := db.GetShortLinkByURL(url)
+	shortLink, err := db.getShortLinkByURL(url)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +58,11 @@ func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error)
 	return db.makeRandomShortLink(url)
 }
 
+func (db *DB) GetShortLink(slug string) (*models.ShortLink, error) {
+	return db.getShortLinkBySlug(slug)
+}
 
-func (db *DB) GetShortLinkByURL(url string) (*models.ShortLink, error) {
+func (db *DB) getShortLinkByURL(url string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(getByURLStmt)
 	if err != nil {
 		return nil, err
@@ -67,7 +71,7 @@ func (db *DB) GetShortLinkByURL(url string) (*models.ShortLink, error) {
 	return db.getShortLink(url, stmt)
 }
 
-func (db *DB) GetShortLinkBySlug(slug string) (*models.ShortLink, error) {
+func (db *DB) getShortLinkBySlug(slug string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(getBySlugStmt)
 	if err != nil {
 		return nil, err
@@ -148,7 +152,11 @@ func (db *DB) getShortLink(searchParam string, stmt *sql.Stmt) (*models.ShortLin
 }
 
 func (db *DB) MakeShortLinkVisit(slug string) error {
-	// TODO: impolement business logic with db calls when appropriate
+	t := time.Now()
+	_, err := db.Connection.Exec(insertVisitStmt, slug, t.Format("2000-01-01"), t.Unix())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
