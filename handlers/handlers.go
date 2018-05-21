@@ -60,6 +60,7 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 }
 
 // Redirect handles requests that are intended for existing short links
+// TODO: add cache to improve redirect speed
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	slug, ok := mux.Vars(r)["slug"]
 	if !ok {
@@ -67,6 +68,15 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		writeResponse(w, http.StatusBadRequest, nil)
 		return
 	}
+
+	// TODO:
+	//
+	// Lookup slug in cache
+	// if slug exists:
+	//   record short link visit & redirect
+	// else:
+	//   lookup short link in db
+	//
 
 	shortLink, err := h.DB.GetShortLink(slug)
 	if err != nil {
@@ -79,6 +89,11 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		writeResponse(w, http.StatusNotFound, nil)
 		return
 	}
+
+	// TODO:
+	// 
+	// Add short link to cache with TTL (one week)
+	//
 
 	// record short link visit in go coroutine
 	go func() {
