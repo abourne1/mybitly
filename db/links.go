@@ -76,6 +76,7 @@ func (db *DB) getShortLinkByURL(url string) (*models.ShortLink, error) {
 func (db *DB) getShortLinkBySlug(slug string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(getBySlugStmt)
 	if err != nil {
+		log.Printf("[Error] getShortLinkBySlug - db.Connection.Prepare: %v", err.Error())
 		return nil, err
 	}
 	defer stmt.Close()
