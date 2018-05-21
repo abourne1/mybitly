@@ -1,6 +1,7 @@
 package db
 
 import (
+	"sync"
 	"database/sql"
 
 	_ "github.com/lib/pq"
@@ -8,6 +9,7 @@ import (
 
 
 type DB struct {
+	mu sync.Mutex
 	Connection *sql.DB
 }
 

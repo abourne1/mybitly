@@ -25,8 +25,12 @@ const (
 )
 
 // MakeShortLink returns a short link if it already exists, else it creates a new one
-// TODO: address race condition. Checking for short link and creating it should be one atomic action.
 func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error) {
+	// Locking to ensure that the getShortLink/makeShortLink calls are atomic
+	// O.W. two siimultaneous calls might duplicate a short link
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
 	if slug != nil {
 		shortLink, err := db.getShortLinkBySlug(*slug)
 		if err != nil {
