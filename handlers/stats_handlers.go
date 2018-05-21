@@ -24,7 +24,7 @@ func prepareStatsRequest(r *http.Request) (*models.StatsReqBody, error) {
 	return &rb, nil
 }
 
-// StatsCount handles requests to the /stats/counts endpoint
+// StatsCount writes the count of all visits to a given slug to the response
 func (h *Handler) StatsCount(w http.ResponseWriter, r *http.Request) {
 	rb, err := prepareStatsRequest(r)
 	if err != nil {
@@ -49,6 +49,7 @@ func (h *Handler) StatsCount(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusCreated, resp)
 }
 
+// StatsHistogram writes the per-day count of all visits to a given slug to the response
 func (h *Handler) StatsHistogram(w http.ResponseWriter, r *http.Request) {
 	rb, err := prepareStatsRequest(r)
 	if err != nil {
@@ -72,6 +73,7 @@ func (h *Handler) StatsHistogram(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusCreated, resp)
 }
 
+// StatsCreatedAt writes the date a slug was first created to the response
 func (h *Handler) StatsCreatedAt(w http.ResponseWriter, r *http.Request) {
 	rb, err := prepareStatsRequest(r)
 	if err != nil {

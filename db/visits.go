@@ -39,6 +39,7 @@ func (db *DB) GetShortLinkVisitCount(slug string, startPtr *int64, endPtr *int64
 	defer stmt.Close()
 
 	var count int64
+	// if startPtr or endPtr is null, choose earliest or current time respectively 
 	start := resolveTime(startPtr, 0)
 	end := resolveTime(endPtr, time.Now().Unix())
 	err = stmt.QueryRow(slug, start, end).Scan(&count)
@@ -49,13 +50,17 @@ func (db *DB) GetShortLinkVisitCount(slug string, startPtr *int64, endPtr *int64
 	return &count, nil
 }
 
+// GetShortLinkVisitHistogram returns a per-day link visit count
+// no entry is included if the link was not visited on a given day
 func (db *DB) GetShortLinkVisitHistogram(slug string, startPtr *int64, endPtr *int64) (map[string]int64, error) {
+	// if startPtr or endPtr is null, choose earliest or current time respectively 
 	start := resolveTime(startPtr, 0)
 	end := resolveTime(endPtr, time.Now().Unix())
 	rows, err := db.Connection.Query(histogramStmt, slug, start, end)
 	defer rows.Close()
 
 	histogram := map[string]int64{}
+	// for each date that the slug was visited, write count to histogram map
 	for rows.Next() {
 		var datestr string
 		var count int64

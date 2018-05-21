@@ -16,6 +16,7 @@ type Handler struct {
 	DB *db.DB
 }
 
+// New returns a new instance of MyBitly handler
 func New(db *db.DB) *Handler {
 	return &Handler{
 		DB: db,
@@ -30,6 +31,7 @@ func writeResponse(w http.ResponseWriter, status int, resp []byte) {
 	}
 }
 
+// Link is a handler that handles requests to create new short links
 func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var err error
@@ -57,6 +59,7 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusCreated, resp)
 }
 
+// Redirect handles requests that are intended for existing short links
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	slug, ok := mux.Vars(r)["slug"]
 	if !ok {
@@ -77,6 +80,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// record short link visit in go coroutine
 	go func() {
 		err := h.DB.MakeShortLinkVisit(shortLink.Slug)
 		if err != nil {

@@ -63,6 +63,10 @@ func (db *DB) GetShortLink(slug string) (*models.ShortLink, error) {
 	return db.getShortLinkBySlug(slug)
 }
 
+/*
+* GetShortLink helper functions 
+*/
+
 func (db *DB) getShortLinkByURL(url string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(getByURLStmt)
 	if err != nil {
@@ -105,6 +109,10 @@ func (db *DB) getShortLink(searchParam string, stmt *sql.Stmt) (*models.ShortLin
 		CreatedAt: createdAt,
 	}, nil
 }
+
+/* 
+* MakeShortLink helper functions 
+*/
 
 func (db *DB) makeRandomShortLink(url string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(insertStmt)
