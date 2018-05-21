@@ -30,8 +30,19 @@ func GetURISuffix(uri string) string {
 	return cleanURI[i+1:]
 }
 
+// StandardizeFinalShortLinkSlash removes a slash from the end of a string if present
+func StandardizeFinalShortLinkSlash(url string) string {
+	urlLen := len(url)
+	if urlLen <= 0 {
+		return ""
+	}
+	if url[urlLen-1] == '/' {
+		return url[:urlLen-1]
+	}
+	return url
+}
+
 // ConvertBase converts an integer to base 62
-// TODO: update function to return fixed-width base 62 numbers
 func ConvertBase(uuid int64, base int64) (*string, error) {
 	
 	if uuid <= 0 || uuid >= 56800235584 { // 56800235584 is the max number that can be converted to base62 with 6 characters

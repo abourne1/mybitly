@@ -89,5 +89,6 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	restOfURL := lib.GetURISuffix(r.URL.RequestURI())
-	http.Redirect(w, r, shortLink.URL + restOfURL, http.StatusSeeOther)
+	standardizedShortLink := lib.StandardizeFinalShortLinkSlash(shortLink.URL)
+	http.Redirect(w, r, standardizedShortLink + "/" + restOfURL, http.StatusSeeOther)
 }
