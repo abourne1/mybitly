@@ -53,6 +53,11 @@ func TestConvertBase(t *testing.T) {
 			HasErr: true,
 		},
 		{
+			UUID: 56800235584,
+			Base: 62,
+			HasErr: true,
+		},
+		{
 			UUID: 1,
 			Exp: "aaaaab",
 			Base: 62,
