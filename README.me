@@ -20,7 +20,7 @@ Unfortunately, I ran out of time to implement the cache, so for now, this soluti
 
 ### Data Model
 I decided to store randomly generated short links and custom short links in the same table b/c I thought it would save me some time.
-Obviously there are some drawbacks to this approach. For one, it reduces the total number of short links I can make. Assuming that I want a fixed-width url shortener (like bit.ly and goo.gl), then there's at most 62^7 short links I can make. Placing custom links in the same table as my random links means that I have less unique keys to generate slugs from.
+Obviously there are some drawbacks to this approach. For one, it reduces the total number of short links I can make. Assuming that I want a fixed-width url shortener (like bit.ly and goo.gl), then there's at most 62^6 short links I can make. Placing custom links in the same table as my random links means that I have less unique keys to generate slugs from.
 
 ## What I would have done with more time
 

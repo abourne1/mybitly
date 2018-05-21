@@ -54,17 +54,17 @@ func TestConvertBase(t *testing.T) {
 		},
 		{
 			UUID: 1,
-			Exp: "b",
+			Exp: "aaaaab",
 			Base: 62,
 		},
 		{
 			UUID: 62,
-			Exp: "ba",
+			Exp: "aaaaba",
 			Base: 62,
 		},
 		{
 			UUID: 63,
-			Exp: "bb",
+			Exp: "aaaabb",
 			Base: 62,
 		},
 	}
