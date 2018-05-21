@@ -68,12 +68,12 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	shortLink, err := h.DB.GetShortLink(slug)
 	if err != nil {
 		log.Printf("[Error] Redirect - h.DB.GetShortLink: %v", err.Error())
-		writeResponse(w, http.StatusNotFound, nil)
+		writeResponse(w, http.StatusInternalServerError, nil)
 		return
 	}
 	if shortLink == nil {
-		log.Printf("[Error] Redirect - h.DB.GetShortLink: %v", err.Error())
-		writeResponse(w, http.StatusInternalServerError, nil)
+		log.Printf("[Error] Redirect - no short link with slug: %v", slug)
+		writeResponse(w, http.StatusNotFound, nil)
 		return
 	}
 

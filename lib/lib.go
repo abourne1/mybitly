@@ -15,12 +15,14 @@ func GetURISuffix(uri string) string {
 	if len(uri) == 0 {
 		return ""
 	}
-	i := strings.Index(uri[1:], "/")
+
+	cleanURI := uri[1:] // remove initial backslash from uri
+	i := strings.Index(cleanURI, "/")
 	if i == -1 {
 		// URL does not contain suffix
 		return ""
 	}
-	return uri[i+1:]
+	return cleanURI[i+1:]
 }
 
 func ConvertBase(uuid int64, base int64) (*string, error) {

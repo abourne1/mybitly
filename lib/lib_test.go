@@ -23,7 +23,7 @@ func TestGetURLSuffix(t *testing.T) {
 		},
 		{
 			URI: "/test-url/with-more-url?and=params",
-			Expected: "/with-more-url?and=params",
+			Expected: "with-more-url?and=params",
 		},
 	}
 
