@@ -35,12 +35,14 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 	shortLink, err := h.DB.MakeShortLink(rb.URL, rb.Slug)
 	if err != nil {
 		// TODO: return 500
+		log.Printf("[Error] h.DB.MakeShortLink: %v", err.Error())
 		panic(err)
 	}
 
 	resp, err := json.Marshal(shortLink)
 	if err != nil {
 		// TODO: return 500
+		log.Printf("[Error] json.Marshal: %v", err.Error())
 		panic(err)
 	}
 

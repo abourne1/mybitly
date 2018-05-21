@@ -1,6 +1,7 @@
 package db
 
 import (
+	"log"
 	"time"
 	"database/sql"
 
@@ -17,18 +18,19 @@ const (
 	getByURLStmt = `SELECT * FROM short_link WHERE url=$1 LIMIT 1`
 
 	insertStmt = `INSERT INTO short_link (url, created_at) VALUES ($1, $2) RETURNING uuid`
-	insertCustomStmt = `INSERT INTO short_link (url, slug, created_at) VALUES ($1, $2, $3)`
+	insertCustomStmt = `INSERT INTO short_link (url, slug, created_at) VALUES ($1, $2, $3) RETURNING uuid`
 
 	addSlugStmt = `UPDATE short_link SET slug=$1 WHERE uuid=$2`
 )
 
 // MakeShortLink returns a short link if it already exists, else it creates a new one
-// TODO: address race condition. Checking for short link and creating it should be one atomic action
+// TODO: address race condition. Checking for short link and creating it should be one atomic action.
 func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error) {
 	if slug != nil {
 		// If slug already exists, return it
 		shortLink, err := db.getShortLinkBySlug(*slug)
 		if err != nil {
+			log.Printf("[Error] MakeShortLink - db.getShortLinkBySlug: %v", err.Error())
 			return nil, err
 		}
 		if shortLink != nil {
@@ -59,6 +61,7 @@ func (db *DB) GetShortLink(slug string) (*models.ShortLink, error) {
 func (db *DB) getShortLinkByURL(url string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(getByURLStmt)
 	if err != nil {
+		log.Printf("[Error] getShortLinkByURL - db.Connection.Prepare: %v", err.Error())
 		return nil, err
 	}
 	defer stmt.Close()
@@ -74,9 +77,31 @@ func (db *DB) getShortLinkBySlug(slug string) (*models.ShortLink, error) {
 	return db.getShortLink(slug, stmt)
 }
 
+func (db *DB) getShortLink(searchParam string, stmt *sql.Stmt) (*models.ShortLink, error) {
+	var uuid int64
+	var dbSlug string
+	var dbURL string
+	var createdAt int64
+	err := stmt.QueryRow(searchParam).Scan(&uuid, &dbSlug, &dbURL, &createdAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		log.Printf("[Error] getShortLink - stmt.QueryRow: %v", err.Error())
+		return nil, err
+	}
+	return &models.ShortLink{
+		UUID: uuid,
+		Slug: dbSlug,
+		URL: dbURL,
+		CreatedAt: createdAt,
+	}, nil
+}
+
 func (db *DB) makeRandomShortLink(url string) (*models.ShortLink, error) {
 	stmt, err := db.Connection.Prepare(insertStmt)
 	if err != nil {
+		log.Printf("[Error] makeRandomShortLink - db.Connection.Prepare: %v", err.Error())
 		return nil, err
 	}
 	defer stmt.Close()
@@ -85,6 +110,7 @@ func (db *DB) makeRandomShortLink(url string) (*models.ShortLink, error) {
 	createdAt := time.Now().Unix()
 	err = stmt.QueryRow(url, time.Now().Unix()).Scan(&shortLinkUUID)
 	if err != nil {
+		log.Printf("[Error] makeRandomShortLink - stmt.QueryRow: %v", err.Error())
 		return nil, err
 	}
 
@@ -92,6 +118,7 @@ func (db *DB) makeRandomShortLink(url string) (*models.ShortLink, error) {
 	base62UUID, _ := lib.ConvertBase(shortLinkUUID, uuidConversionBase)
 	_, err = db.Connection.Exec(addSlugStmt, *base62UUID, shortLinkUUID)
 	if err != nil {
+		log.Printf("[Error] makeRandomShortLink - db.Connection.Exec: %v", err.Error())
 		return nil, err
 	}
 
@@ -112,8 +139,9 @@ func (db *DB) makeCustomShortLink(url string, slug string) (*models.ShortLink, e
 
 	var shortLinkUUID int64
 	createdAt := time.Now().Unix()
-	err = stmt.QueryRow(url, createdAt).Scan(&shortLinkUUID)
+	err = stmt.QueryRow(url, slug, createdAt).Scan(&shortLinkUUID)
 	if err != nil {
+		log.Printf("[Error] makeCustomShortLink - stmt.QueryRow: %v", err.Error())
 		return nil, err
 	}
 
@@ -121,26 +149,6 @@ func (db *DB) makeCustomShortLink(url string, slug string) (*models.ShortLink, e
 		UUID: shortLinkUUID,
 		Slug: slug,
 		URL: url, 
-		CreatedAt: createdAt,
-	}, nil
-}
-
-func (db *DB) getShortLink(searchParam string, stmt *sql.Stmt) (*models.ShortLink, error) {
-	var uuid int64
-	var dbSlug string
-	var dbURL string
-	var createdAt int64
-	err := stmt.QueryRow(searchParam).Scan(&uuid, &dbSlug, &dbURL, &createdAt)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &models.ShortLink{
-		UUID: uuid,
-		Slug: dbSlug,
-		URL: dbURL,
 		CreatedAt: createdAt,
 	}, nil
 }
