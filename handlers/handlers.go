@@ -31,11 +31,20 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	err = h.DB.MakeShortLink(rb.URL, rb.Slug)
+	shortLink, err := h.DB.MakeShortLink(rb.URL, rb.Slug)
 	if err != nil {
 		// TODO: return 500
 		panic(err)
 	}
+
+	resp, err := json.Marshal(shortLink)
+	if err != nil {
+		// TODO: return 500
+		panic(err)
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
 }
 
 // TODO: Consider making this three separate endpoints
@@ -103,10 +112,14 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		panic("400 - Bad Request")
 	}
 
-	shortLink, err := h.DB.GetShortLink(slug)
+	shortLink, err := h.DB.GetShortLinkBySlug(slug)
 	if err != nil {
 		// TODO: return 404 not found
 		panic(err)
+	}
+	if shortLink == nil {
+		// TODO: return 404 not found
+		return
 	}
 
 	go h.DB.MakeShortLinkVisit(shortLink.Slug)
