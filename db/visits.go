@@ -5,16 +5,25 @@ import (
 )
 
 const (
+	datestrFormatStr = "2006-01-02"
+
 	insertVisitStmt = `INSERT INTO short_link_visit (slug, datestr, created_at) VALUES ($1, $2, $3)`
 	visitCountStmt = `SELECT count(*) FROM short_link_visit WHERE slug=$1 AND created_at BETWEEN $2 AND $3`
-	histogramStmt = `SELECT count(*) FROM short_link_visit WHERE slug=$1 AND created_at BETWEEN $2 AND $3 GROUP BY datestr`
+	histogramStmt = `SELECT datestr, count(*) FROM short_link_visit WHERE slug=$1 AND created_at BETWEEN $2 AND $3 GROUP BY datestr`
 	creationDate = 	`SELECT created_at FROM short_link_visit WHERE slug=$1 ORDER BY created_at ASC LIMIT 1`
 )
+
+func resolveTime(timePtr *int64, fallback int64) int64 {
+	if timePtr != nil {
+		return *timePtr
+	}
+	return fallback
+}
 
 // MakeShortLinkVisit records that a short link was visited
 func (db *DB) MakeShortLinkVisit(slug string) error {
 	t := time.Now()
-	_, err := db.Connection.Exec(insertVisitStmt, slug, t.Format("2000-01-01"), t.Unix())
+	_, err := db.Connection.Exec(insertVisitStmt, slug, t.Format(datestrFormatStr), t.Unix())
 	if err != nil {
 		return err
 	}
@@ -22,31 +31,38 @@ func (db *DB) MakeShortLinkVisit(slug string) error {
 }
 
 // GetShortLinkVisitCount returns the number of times a short link was visited
-func (db *DB) GetShortLinkVisitCount(slug string, start *int64, end *int64) (*int64, error) {
+func (db *DB) GetShortLinkVisitCount(slug string, startPtr *int64, endPtr *int64) (*int64, error) {
 	stmt, err := db.Connection.Prepare(visitCountStmt)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	var count *int64
-	err = stmt.QueryRow(slug, start, end).Scan(count)
+	var count int64
+	start := resolveTime(startPtr, 0)
+	end := resolveTime(endPtr, time.Now().Unix())
+	err = stmt.QueryRow(slug, start, end).Scan(&count)
 	if err != nil {
 		return nil, err
 	}
 
-	return count, nil
+	return &count, nil
 }
 
-func (db *DB) GetShortLinkVisitHistogram(slug string, start *int64, end *int64) (map[string]int64, error) {
-	stmt, err := db.Connection.Prepare(histogramStmt)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
+func (db *DB) GetShortLinkVisitHistogram(slug string, startPtr *int64, endPtr *int64) (map[string]int64, error) {
+	start := resolveTime(startPtr, 0)
+	end := resolveTime(endPtr, time.Now().Unix())
+	rows, err := db.Connection.Query(histogramStmt, slug, start, end)
+	defer rows.Close()
 
-	var histogram map[string]int64
-	err = stmt.QueryRow(slug, start, end).Scan(histogram)
+	histogram := map[string]int64{}
+	for rows.Next() {
+		var datestr string
+		var count int64
+		err = rows.Scan(&datestr, &count)
+		histogram[datestr] = count
+	}
+	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
@@ -61,11 +77,11 @@ func (db *DB) GetShortLinkCreationDate(slug string) (*int64, error) {
 	}
 	defer stmt.Close()
 
-	var createdAt *int64
-	err = stmt.QueryRow(slug).Scan(createdAt)
+	var createdAt int64
+	err = stmt.QueryRow(slug).Scan(&createdAt)
 	if err != nil {
 		return nil, err
 	}
 
-	return createdAt, nil
+	return &createdAt, nil
 }

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
-	"database/sql"
 
 	"github.com/gorilla/mux"
 
@@ -15,7 +15,7 @@ import (
 
 func main() {
 	// Connect to Postgres SB
-	dbinfo := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable", 
+	dbinfo := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable",
 		config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME)
 	db, err := sql.Open("postgres", dbinfo)
 	if err != nil {

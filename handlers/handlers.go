@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"encoding/json"
+	"log"
 
 	"github.com/gorilla/mux"
 
@@ -61,11 +62,11 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make stats calls in parallel and write results
-	countChan := make(chan int64)
+	countChan := make(chan *int64)
 	histChan := make(chan map[string]int64)
-	createChan := make(chan int64)
+	createChan := make(chan *int64)
 
-	go func(c chan int64) {
+	go func(c chan *int64) {
 		count, err := h.DB.GetShortLinkVisitCount(rb.Slug, rb.StartTime, rb.EndTime)
 		if err != nil {
 			// TODO: return 500
@@ -83,7 +84,7 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 		c <- histogram
 	}(histChan)
 
-	go func(c chan int64) {
+	go func(c chan *int64) {
 		createdAt, err := h.DB.GetShortLinkCreationDate(rb.Slug)
 		if err != nil {
 			// TODO: return 500
@@ -122,7 +123,12 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go h.DB.MakeShortLinkVisit(shortLink.Slug)
+	go func() {
+		err := h.DB.MakeShortLinkVisit(shortLink.Slug)
+		if err != nil {
+			log.Printf("Failed to record visit: %s", err.Error())
+		}
+	}()
 
 	restOfURL := lib.GetURISuffix(r.URL.RequestURI())
 	http.Redirect(w, r, shortLink.URL + restOfURL, http.StatusSeeOther)
