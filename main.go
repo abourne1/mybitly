@@ -34,7 +34,9 @@ func main() {
 	// Define routes and serve
 	r := mux.NewRouter()
 	r.HandleFunc("/link/", handler.Link)
-	r.HandleFunc("/stats/", handler.Stats)
+	r.HandleFunc("/stats/count", handler.StatsCount)
+	r.HandleFunc("/stats/histogram", handler.StatsHistogram)
+	r.HandleFunc("/stats/created_at", handler.StatsCreatedAt)
 	r.PathPrefix("/{slug}").HandlerFunc(handler.Redirect)
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

@@ -35,7 +35,7 @@ func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error)
 		}
 		// If slug already exists, return err
 		if shortLink != nil {
-			return nil, fmt.Errorf("Short link with slug '%v' already exists", slug)
+			return nil, fmt.Errorf("Short link with slug '%v' already exists", *slug)
 		}
 		// If it does not exist, create a new one
 		return db.makeCustomShortLink(url, *slug)

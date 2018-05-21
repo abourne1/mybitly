@@ -22,13 +22,19 @@ type LinkReqBody struct {
 }
 
 type StatsReqBody struct {
-	Slug string `json:"slug"`
+	Slug *string `json:"slug"`
 	StartTime *int64 `json:"start_time,omitempty"`
 	EndTime *int64 `json:"end_time,omitempty"`
 }
 
-type StatsRespBody struct {
+type StatsCountRespBody struct {
 	Count *int64 `json:"count"`
+}
+
+type StatsHistRespBody struct {
 	Histogram map[string]int64 `json:"histogram"`
+}
+
+type StatsCreatedAtRespBody struct {
 	CreatedAt *int64 `json:"created_at"`
 }

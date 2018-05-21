@@ -57,68 +57,6 @@ func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 	writeResponse(w, http.StatusCreated, resp)
 }
 
-// TODO: Consider making this three separate endpoints
-// Instructions say "Provide a route for returning stats on a given short link"
-// I'm not sure if I have to make ONE route or if I can make many routes
-func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
-	var err error
-	var rb models.StatsReqBody
-	err = decoder.Decode(&rb)
-	if err != nil {
-		log.Printf("[Error] Stats - decoder.Decode: %v", err.Error())
-		writeResponse(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	// Make stats calls in parallel and write results
-	countChan := make(chan *int64)
-	histChan := make(chan map[string]int64)
-	createChan := make(chan *int64)
-
-	go func(c chan *int64) {
-		count, err := h.DB.GetShortLinkVisitCount(rb.Slug, rb.StartTime, rb.EndTime)
-		if err != nil {
-			log.Printf("[Error] Stats - h.DB.GetShortLinkVisitCount: %v", err.Error())
-			writeResponse(w, http.StatusInternalServerError, nil)
-			return
-		}
-		c <- count
-	}(countChan)
-
-	go func(c chan map[string]int64) {
-		histogram, err := h.DB.GetShortLinkVisitHistogram(rb.Slug, rb.StartTime, rb.EndTime)
-		if err != nil {
-			log.Printf("[Error] Stats - h.DB.GetShortLinkVisitHistogram: %v", err.Error())
-			writeResponse(w, http.StatusInternalServerError, nil)
-			return
-		}
-		c <- histogram
-	}(histChan)
-
-	go func(c chan *int64) {
-		createdAt, err := h.DB.GetShortLinkCreationDate(rb.Slug)
-		if err != nil {
-			log.Printf("[Error] Stats - h.DB.GetShortLinkVisitHistogram: %v", err.Error())
-			writeResponse(w, http.StatusInternalServerError, nil)
-			return
-		}
-		c <- createdAt
-	}(createChan)
-
-	resp, err := json.Marshal(models.StatsRespBody{
-		Count: <-countChan,
-		Histogram: <-histChan,
-		CreatedAt: <-createChan,
-	})
-	if err != nil {
-		log.Printf("[Error] Stats - h.DB.GetShortLinkVisitHistogram: %v", err.Error())
-		writeResponse(w, http.StatusInternalServerError, nil)
-		return
-	}
-	writeResponse(w, http.StatusCreated, resp)
-}
-
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	slug, ok := mux.Vars(r)["slug"]
 	if !ok {
