@@ -3,10 +3,11 @@ package models
 type UUID string
 
 type ShortLink struct {
-	UUID int64 `db:"id"`
-	Slug string `db:"slug"`
-	URL string `db:"url"`
-	CreatedAt int64 `db:"created_at"`
+	UUID int64
+	Slug string
+	URL string
+	IsCustom bool
+	CreatedAt int64
 }
 
 type ShortLinkVisit struct {

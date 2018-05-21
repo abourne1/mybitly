@@ -18,8 +18,8 @@ const (
 	getBySlugStmt = `SELECT * FROM short_link WHERE slug=$1 LIMIT 1`
 	getByURLStmt = `SELECT * FROM short_link WHERE url=$1 LIMIT 1`
 
-	insertStmt = `INSERT INTO short_link (url, created_at) VALUES ($1, $2) RETURNING uuid`
-	insertCustomStmt = `INSERT INTO short_link (url, slug, created_at) VALUES ($1, $2, $3) RETURNING uuid`
+	insertStmt = `INSERT INTO short_link (url, created_at, is_custom) VALUES ($1, $2, false) RETURNING uuid`
+	insertCustomStmt = `INSERT INTO short_link (url, slug, created_at, is_custom) VALUES ($1, $2, $3, true) RETURNING uuid`
 
 	addSlugStmt = `UPDATE short_link SET slug=$1 WHERE uuid=$2`
 )
@@ -42,12 +42,12 @@ func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error)
 
 	}
 
-	// If URL is already short linked, return it
+	// If URL is already short linked and not custom, return it
 	shortLink, err := db.getShortLinkByURL(url)
 	if err != nil {
 		return nil, err
 	}
-	if shortLink != nil {
+	if shortLink != nil && !shortLink.IsCustom {
 		return shortLink, err
 	}
 
@@ -82,8 +82,9 @@ func (db *DB) getShortLink(searchParam string, stmt *sql.Stmt) (*models.ShortLin
 	var uuid int64
 	var dbSlug string
 	var dbURL string
+	var isCustom bool
 	var createdAt int64
-	err := stmt.QueryRow(searchParam).Scan(&uuid, &dbSlug, &dbURL, &createdAt)
+	err := stmt.QueryRow(searchParam).Scan(&uuid, &dbSlug, &dbURL, &isCustom, &createdAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -95,6 +96,7 @@ func (db *DB) getShortLink(searchParam string, stmt *sql.Stmt) (*models.ShortLin
 		UUID: uuid,
 		Slug: dbSlug,
 		URL: dbURL,
+		IsCustom: isCustom,
 		CreatedAt: createdAt,
 	}, nil
 }
@@ -127,6 +129,7 @@ func (db *DB) makeRandomShortLink(url string) (*models.ShortLink, error) {
 		UUID: shortLinkUUID,
 		Slug: *base62UUID,
 		URL: url, 
+		IsCustom: false,
 		CreatedAt: createdAt,
 	}, nil
 }
@@ -150,6 +153,7 @@ func (db *DB) makeCustomShortLink(url string, slug string) (*models.ShortLink, e
 		UUID: shortLinkUUID,
 		Slug: slug,
 		URL: url, 
+		IsCustom: true,
 		CreatedAt: createdAt,
 	}, nil
 }
