@@ -22,32 +22,39 @@ func New(db *db.DB) *Handler {
 	}
 }
 
+func writeResponse(w http.ResponseWriter, status int, resp []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if resp != nil {
+		w.Write(resp)
+	}
+}
+
 func (h *Handler) Link(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var err error
 	var rb models.LinkReqBody
 	err = decoder.Decode(&rb)
 	if err != nil {
-		// TODO: return 400 Bad Request
-		panic(err)
+		log.Printf("[Error] Link - decoder.Decode: %v", err.Error())
+		writeResponse(w, http.StatusBadRequest, nil)
+		return
 	}
 
 	shortLink, err := h.DB.MakeShortLink(rb.URL, rb.Slug)
 	if err != nil {
-		// TODO: return 500
-		log.Printf("[Error] h.DB.MakeShortLink: %v", err.Error())
-		panic(err)
+		log.Printf("[Error] Link - h.DB.MakeShortLink: %v", err.Error())
+		writeResponse(w, http.StatusInternalServerError, nil)
+		return
 	}
 
 	resp, err := json.Marshal(shortLink)
 	if err != nil {
-		// TODO: return 500
-		log.Printf("[Error] json.Marshal: %v", err.Error())
-		panic(err)
+		log.Printf("[Error] Link - json.Marshal: %v", err.Error())
+		writeResponse(w, http.StatusInternalServerError, nil)
+		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	writeResponse(w, http.StatusCreated, resp)
 }
 
 // TODO: Consider making this three separate endpoints
@@ -59,8 +66,9 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	var rb models.StatsReqBody
 	err = decoder.Decode(&rb)
 	if err != nil {
-		// TODO: return 400 Bad Request
-		panic(err)
+		log.Printf("[Error] Stats - decoder.Decode: %v", err.Error())
+		writeResponse(w, http.StatusBadRequest, nil)
+		return
 	}
 
 	// Make stats calls in parallel and write results
@@ -71,8 +79,9 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	go func(c chan *int64) {
 		count, err := h.DB.GetShortLinkVisitCount(rb.Slug, rb.StartTime, rb.EndTime)
 		if err != nil {
-			// TODO: return 500
-			panic(err)
+			log.Printf("[Error] Stats - h.DB.GetShortLinkVisitCount: %v", err.Error())
+			writeResponse(w, http.StatusInternalServerError, nil)
+			return
 		}
 		c <- count
 	}(countChan)
@@ -80,8 +89,9 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	go func(c chan map[string]int64) {
 		histogram, err := h.DB.GetShortLinkVisitHistogram(rb.Slug, rb.StartTime, rb.EndTime)
 		if err != nil {
-			// TODO: return 500
-			panic(err)
+			log.Printf("[Error] Stats - h.DB.GetShortLinkVisitHistogram: %v", err.Error())
+			writeResponse(w, http.StatusInternalServerError, nil)
+			return
 		}
 		c <- histogram
 	}(histChan)
@@ -89,8 +99,9 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 	go func(c chan *int64) {
 		createdAt, err := h.DB.GetShortLinkCreationDate(rb.Slug)
 		if err != nil {
-			// TODO: return 500
-			panic(err)
+			log.Printf("[Error] Stats - h.DB.GetShortLinkVisitHistogram: %v", err.Error())
+			writeResponse(w, http.StatusInternalServerError, nil)
+			return
 		}
 		c <- createdAt
 	}(createChan)
@@ -101,27 +112,30 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: <-createChan,
 	})
 	if err != nil {
-		// TODO: return 500
-		panic(err)
+		log.Printf("[Error] Stats - h.DB.GetShortLinkVisitHistogram: %v", err.Error())
+		writeResponse(w, http.StatusInternalServerError, nil)
+		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	writeResponse(w, http.StatusCreated, resp)
 }
 
 func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	slug, ok := mux.Vars(r)["slug"]
 	if !ok {
-		// TODO: return 400 bad request
-		panic("400 - Bad Request")
+		log.Printf("[Error] Redirect - Unable to parse URL params")
+		writeResponse(w, http.StatusBadRequest, nil)
+		return
 	}
 
 	shortLink, err := h.DB.GetShortLink(slug)
 	if err != nil {
-		// TODO: return 404 not found
-		panic(err)
+		log.Printf("[Error] Redirect - h.DB.GetShortLink: %v", err.Error())
+		writeResponse(w, http.StatusNotFound, nil)
+		return
 	}
 	if shortLink == nil {
-		// TODO: return 404 not found
+		log.Printf("[Error] Redirect - h.DB.GetShortLink: %v", err.Error())
+		writeResponse(w, http.StatusInternalServerError, nil)
 		return
 	}
 

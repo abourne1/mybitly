@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"time"
 	"database/sql"
@@ -27,14 +28,14 @@ const (
 // TODO: address race condition. Checking for short link and creating it should be one atomic action.
 func (db *DB) MakeShortLink(url string, slug *string) (*models.ShortLink, error) {
 	if slug != nil {
-		// If slug already exists, return it
 		shortLink, err := db.getShortLinkBySlug(*slug)
 		if err != nil {
 			log.Printf("[Error] MakeShortLink - db.getShortLinkBySlug: %v", err.Error())
 			return nil, err
 		}
+		// If slug already exists, return err
 		if shortLink != nil {
-			return shortLink, nil
+			return nil, fmt.Errorf("Short link with slug '%v' already exists", slug)
 		}
 		// If it does not exist, create a new one
 		return db.makeCustomShortLink(url, *slug)
